@@ -34,7 +34,7 @@ function cookie_wrapper(res, returnedFirstname, token, returnedLastname){
         sameSite: "strict",
         maxAge: Number(process.env.COOKIE_MAX_AGE)
     });
-};
+}
 
 export const signup = async (req, res) => {
     try {
@@ -145,11 +145,11 @@ export const login = async (req, res) => {
 
         const {email, phoneNumber} = await identifier_logic(identifier);
 
-        // 2. Hash incoming password
-        const hashedPassword = await bcrypt.hash(
-            pass,
-            Number(process.env.BCRYPT_SALT_ROUNDS)
-        );
+        // 2. Hash incoming password (previous approach)
+        // const hashedPassword = await bcrypt.hash(
+        //     pass,
+        //     Number(process.env.BCRYPT_SALT_ROUNDS)
+        // );
 
         // 3. Prepare payload for dataLink
         const dataPayload = {
