@@ -3,24 +3,72 @@ import bcrypt from "bcryptjs";
 
 export const signupUser = async (req, res) => {
     try {
-        console.log("SignUp Step 1a: Incoming packet from Backend:",req.body);
+        const { firstname, lastname, email, phoneNumber, password, is_planned } = req.body;
 
-        const user = await User.create(req.body);
-        const identifier = user.email ? user.email : user.phoneNumber;
-
-        console.log("SignUp Step 1b: Outgoing packet to Backend:",{"ID":user._id},identifier);
-
-        return res.status(201).json({
-            userID: user._id,
-            identifier,
-            firstname: user.firstname,
-            lastname: user.lastname
+        const newUser = await User.create({
+            firstname,
+            lastname,
+            email,
+            phoneNumber,
+            password,
+            is_planned
         });
 
-    } catch (err) {
-        return res.status(500).json({ status: "error" });
+        const preferredIdentifier = newUser.email || newUser.phoneNumber;
+
+        return res.status(201).json({
+            statusCode: 201,
+            userID: newUser._id,
+            identifier: preferredIdentifier
+        });
+
+    } catch (error) {
+        // MongoDB duplicate key error code
+        if (error.code === 11000) {
+            // Specific field detection
+            if (error.keyPattern?.email) {
+                return res.status(409).json({
+                    statusCode: 409,
+                    message: "Email already registered"
+                });
+            }
+
+            if (error.keyPattern?.phoneNumber) {
+                return res.status(409).json({
+                    statusCode: 409,
+                    message: "Phone number already registered"
+                });
+            }
+        }
+
+        return res.status(500).json({
+            statusCode: 500,
+            message: "Database error"
+        });
     }
 };
+
+// Version 1.0 Signup(working)
+// export const signupUser = async (req, res) => {
+//     try {
+//         console.log("SignUp Step 1a: Incoming packet from Backend:",req.body);
+//
+//         const user = await User.create(req.body);
+//         const identifier = user.email ? user.email : user.phoneNumber;
+//
+//         console.log("SignUp Step 1b: Outgoing packet to Backend:",{"ID":user._id},identifier);
+//
+//         return res.status(201).json({
+//             userID: user._id,
+//             identifier,
+//             firstname: user.firstname,
+//             lastname: user.lastname
+//         });
+//
+//     } catch (err) {
+//         return res.status(500).json({ status: "error" });
+//     }
+// };
 
 export const login = async (req, res) => {
     try {

@@ -2,7 +2,7 @@
 
 ___
 
-## sign-in packet:
+## sign-in packet(public):
 
     firstname: str
     lastname: str
@@ -15,7 +15,7 @@ ___
 >http://`<hostip>`:8002/user/signup
 ___
 
-## log-in packet:
+## log-in packet(public):
 
     identifier: str(email) or num(phone)
     pass: str
@@ -27,6 +27,17 @@ http://`<hostip>`:8002/user/login
 
 ---
 
+## log-out packet(protected)
+
+
+      no active data(get)
+      cookies: 
+         irevsl_gbxra
+
+### log-out landing(backend):
+
+
+---
 
 
 

@@ -7,9 +7,9 @@ function identifier_logic(identifier) {
     const onlyNumbersRegex = /^\d+$/;
 
     if (onlyNumbersRegex.test(identifier)) {
-        return {phoneNumber: identifier, email: null};
+        return {phoneNumber: identifier, email: undefined, flag: 0};
     } else {
-        return {phoneNumber: null, email: identifier};
+        return {phoneNumber: undefined, email: identifier, flag: 1};
     }
 }
 
@@ -34,6 +34,24 @@ function cookie_wrapper(res, returnedFirstname, token, returnedLastname){
         sameSite: "strict",
         maxAge: Number(process.env.COOKIE_MAX_AGE)
     });
+}
+
+function jwtpacket_builder(userID,returnedIdentifier) {
+
+    const checker = identifier_logic(returnedIdentifier);
+    if (checker.flag === 1) {
+        return {
+            user: userID,
+            identifier: returnedIdentifier,
+            identifierType: "email"
+        }
+    }else{
+        return {
+            user: userID,
+            identifier: returnedIdentifier,
+            identifierType: "phoneNumber"
+        }
+    }
 }
 
 export const signup = async (req, res) => {
@@ -91,10 +109,7 @@ export const signup = async (req, res) => {
 
         // 5. Create JWT
         const token = jwt.sign(
-            {
-                userId: userID,
-                identifier: returnedIdentifier
-            },
+            jwtpacket_builder(userID,returnedIdentifier),
             process.env.JWT_SECRET,
             {
                 expiresIn: process.env.JWT_EXPIRY
@@ -115,12 +130,24 @@ export const signup = async (req, res) => {
         return res.status(dataLinkResponse.status).json({
             status: "success"
         });
-    } catch (error) {
-        return res.status(500).json({
+    } catch (err) {
+        console.error("Axios Error:", err.response.data);
+
+        return res.status(err.response.status || 500).json({
             status: "error",
-            message: "Signup failed"
+            message:
+                err.response.data.message ||  // backend message (best)
+                "Signup failed"
         });
     }
+
+    // catch (error) {
+    //     return res.status(500).json({
+    //         status: "error",
+    //         message: "Signup failed"
+    //     });
+    // }
+
 
 
 };
@@ -169,10 +196,7 @@ export const login = async (req, res) => {
 
         // 5. Create JWT
         const token = jwt.sign(
-            {
-                userId: userID,
-                identifier: returnedIdentifier
-            },
+            jwtpacket_builder(userID,returnedIdentifier),
             process.env.JWT_SECRET,
             {
                 expiresIn: process.env.JWT_EXPIRY
@@ -221,3 +245,29 @@ export const login = async (req, res) => {
         });
     }
 };
+
+//---------------------------------------------------------------------------------------------------------------------
+
+export const logout = async (req,res) => {
+
+    try{
+        res.clearCookie(process.env.AUTH_COOKIE_NAME,{
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: "strict"
+        });
+
+        return res.status(200).json({
+            status: "success",
+            message: "Logged out successfully!"
+        })
+    }catch(err){
+        console.log("Error on logout hit:",err.response.data)
+
+        return res.status(500).json({
+            status: "error",
+            message: "Internal Server Error"
+        })
+    }
+
+}

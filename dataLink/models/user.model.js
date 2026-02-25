@@ -2,11 +2,34 @@ import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema(
     {
-        firstname: String,
-        lastname: String,
-        email: String,
-        phoneNumber: String,
-        password: String,
+        firstname: {
+            type: String,
+            required: true,
+            trim: true
+        },
+        lastname: {
+            type: String,
+            required: true,
+            trim: true
+        },
+        email: {
+            type: String,
+            unique: true,
+            sparse: true, // allows null values without conflict
+            lowercase: true,
+            trim: true,
+            default: undefined
+        },
+        phoneNumber: {
+            type: String,
+            unique: true,
+            sparse: true, // critical since either email OR phone exists
+            default: undefined
+        },
+        password: {
+            type: String,
+            required: true
+        },
         is_planned: {
             type: Boolean,
             default: false
@@ -16,7 +39,15 @@ const userSchema = new mongoose.Schema(
             default: null
         }
     },
-    { timestamps: true }
+    {
+        timestamps: true
+    }
 );
 
-export default mongoose.model("User", userSchema);
+// Explicit indexes (production clarity)
+userSchema.index({ email: 1 }, { unique: true, sparse: true });
+userSchema.index({ phoneNumber: 1 }, { unique: true, sparse: true });
+
+const User = mongoose.model("User", userSchema);
+
+export default User;
